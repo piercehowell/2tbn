@@ -21,7 +21,13 @@ function ds = genComfortData(num_time_steps, init_ch, ...
         if(strcmp(behavior, 'spd_const_leg_const'))
             spd = 0.0;
             leg = 0.0;
+
+        elseif(strcmp(behavior, 'spd_const_leg_dec'))
+            spd = 0.0;
+            leg = 1.0 - (2.0 / ds.params.num_time_steps) * i;
         end
+
+    
         
         % Update hidden state comfort of human
         prev_ch = ch;

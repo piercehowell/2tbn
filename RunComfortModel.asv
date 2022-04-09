@@ -25,10 +25,10 @@ num_em_steps = 20;
 num_bins = 300;
 hard_em_type = 'MAP';
 em_params_eps_gain = 1; %?
-params.wch_b = 0.0000;
-params.wch_prev_ch = 0.5;
-params.wch_spd = 0.0;
-params.wch_leg = 0.0;
+params.wch_b = 0.0001;
+params.wch_prev_ch = 0.3;
+params.wch_spd = 0.001;
+params.wch_leg = 0.001;
 params.stdch = 0.01;
 params.stdc = 0.01;
 
@@ -37,8 +37,6 @@ model_dup = ComfortModel(params);
 engine = HistoEngineEM(model, params, num_bins, [], ds, hard_em_type);
 engine_dup = HistoEngineEM(model_dup, params, num_bins, [], ds, hard_em_type);
 
-[smoothing_probs_untrained, filtering_probs_untrained] = engine_dup.batchSmooth(ds, true);
-map_states_untrained = engine_dup.extractMAP();
 
 %% Run smoothing/filtering/MAP
 inference_t = -1;
@@ -81,6 +79,13 @@ if num_em_steps > 0
     final_params = engine.em.params_list{end};
     engine_dup.reset()
     engine_dup.updateParams(init_params);
+    cache = engine_dup.cache;
+    cache.ds = dataset;
+    [smoothing_probs_first, filtering_probs_first] = engine_dup.batchSmooth(ds, true);
+    map_states_untrained = engine_dup.extractMAP();
+    exp_smoothed_states_first = mean(smoothing_probs_first.*state_vec_matrix, 2);
+    
+    ljp_first = engine_dup.logJointProb(ds, exp_smoothed_states_first);
     
     curr_params = init_params;
     fprintf('\n');
@@ -105,10 +110,10 @@ if num_em_steps > 0
    figure;
    plot(map_states_trained)
    hold on;
-   title("Estimated Comfort Trajectory (MAP Estimates)")
+   title("Expected Comfort Trajectory (MAP Estimate)")
    plot(map_states_untrained)
    plot([ds(1:end).ch])
-   legend('EM Trained Model', 'Before Training Model (guessed weights)',...
+   legend('Trained Model (EM)', 'Before Training Model (guessed weights)',...
        'True Model (simulated)')
 
 
